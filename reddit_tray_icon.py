@@ -65,7 +65,7 @@ class RedditConfigWindow:
 		self.text_password = gtk.Entry(max=0)
 		self.text_password.set_text(DEFAULT_PASSWORD)
 		self.text_password.set_visibility(False)
-		self.text_password.set_invisible_char('*')
+		self.text_password.set_invisible_char(u'\N{BLACK CIRCLE}')
 		table.attach(self.text_password, 1, 2, 1, 2)
 
 		self.label_interval = gtk.Label('Interval (minutes):')
