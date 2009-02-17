@@ -138,22 +138,27 @@ class RedditTrayIcon():
 		self.busy_icon = gtk.gdk.pixbuf_new_from_file_at_size(os.path.abspath(BUSY_ICON), 24, 24)
 
 		self.tray_icon.set_from_pixbuf(self.reddit_icon)
-
-		#create the popup menu
-		self.check_now = gtk.MenuItem('_Check Now', True)
-		self.check_now.connect('activate', self.on_check_now)
-
-		self.reset_now = gtk.MenuItem('_Reset Icon', True)
-		self.reset_now.connect('activate', self.on_reset)
-
-		self.quit = gtk.MenuItem('_Quit', True)
-		self.quit.connect('activate', self.on_quit)
 		
-		self.menu = gtk.Menu()
-		self.menu.append(self.check_now)
-		self.menu.append(self.reset_now)
-		self.menu.append(self.quit)
-		self.menu.show_all()
+		# Create the main menu actions
+		self.actiongroup = gtk.ActionGroup("Main")
+		self.actiongroup.add_actions([
+			('Refresh', gtk.STOCK_REFRESH, None, None, None, self.on_check_now),
+			('Reset', gtk.STOCK_CLEAR, "Reset", "s", "Reset the new messages notification.", self.on_reset),
+			('Quit', gtk.STOCK_QUIT, None, None, None, self.on_quit)
+		])
+		
+		self.uimanager = gtk.UIManager()
+		self.uimanager.insert_action_group(self.actiongroup, 0)
+		self.uimanager.add_ui_from_string(\
+		"""
+		<ui>
+			<popup name='TrayMenu'>
+				<menuitem action='Refresh' />
+				<menuitem action='Reset' />
+				<menuitem action='Quit' />
+			</popup>
+		</ui>
+		""")
 
 		while gtk.events_pending():
 			gtk.main_iteration(True)
@@ -164,7 +169,7 @@ class RedditTrayIcon():
 		self.timer = gobject.timeout_add(self.interval, self.on_check_now)
 
 	def on_tray_icon_click(self, status_icon, button, activate_time):
-		self.menu.popup(None, None, None, button, activate_time)
+		self.uimanager.get_widget("/TrayMenu").popup(None, None, None, button, activate_time)
 
 	def on_reset(self, event=None):
 		self.newmsgs = []
@@ -175,7 +180,6 @@ class RedditTrayIcon():
 		sys.exit(0)
 
 	def on_check_now(self, event=None):
-
 		#poor mans lock
 		if self.checking:
 			return
@@ -183,7 +187,6 @@ class RedditTrayIcon():
 			self.checking = True
 
 		self.tray_icon.set_from_pixbuf(self.busy_icon)
-		self.menu.hide_all()
 		
 		while gtk.events_pending():
 			gtk.main_iteration(True)
@@ -213,8 +216,6 @@ class RedditTrayIcon():
 		else:
 			self.tray_icon.set_from_pixbuf(self.reddit_icon)
 			self.tray_icon.set_tooltip('No new messages.')
-
-		self.menu.show_all()
 
 		self.checking = False
 
